@@ -10,9 +10,9 @@ import puppeteer from "puppeteer";
    CONFIG
 ───────────────────────────── */
 
-const PROFILE_PATH = "./profile.env";
-const COOKIE_PATH = "./cookies.json";
-const LOG_PATH = "./sessions.log";
+const PROFILE_PATH = "./env/profile.env";
+const COOKIE_PATH = "./env/cookies.json";
+const LOG_PATH = "./env/sessions.log";
 
 /* ─────────────────────────────
    UTILITIES
