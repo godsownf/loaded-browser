@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Pinnacle Browser - Automation Engine</title>
+  <script src="https://cdn.jsdelivr.net/npm/react@18/umd/react.development.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-slate-950 text-slate-200">
+  <div id="root"></div>  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    function Browser() {
+      const [url, setUrl] = useState('https://whoer.net');
+      const [profile, setProfile] = useState({});
+      const [cookies, setCookies] = useState([]);
+      const [stats, setStats] = useState({});
+      const [loading, setLoading] = useState(true);
+
+      useEffect(() => {
+        const loadConfigs = async () => {
+          try {
+            const [envRes, cookieRes] = await Promise.all([
+              fetch('./settings.env').then(r => r.text()),
+              fetch('./cookies.json').then(r => r.json())
+            ]);
+
+            parseEnv(envRes);
+            setCookies(cookieRes);
+          } catch (err) {
+            console.error("Initialization error:", err);          } finally {
+            setLoading(false);
+          }
+        };
+        loadConfigs();
+      }, []);
+
+      const parseEnv = (text) => {
+        const lines = text.split('\n');
+        const data = {};
+        lines.forEach(line => {
+          const [key, ...rest] = line.split(':');
+          if (key && rest.length) data[key.trim()] = rest.join(':').trim();
+        });
+
+        if (data.Browsers) {
+          const s = {};
+          data.Browsers.split('|').forEach(item => {
+            const [k, v] = item.split(':');
+            s[k] = v;
+          });
+          setStats(s);
+        }
+        setProfile(data);
+      };
+
+      if (loading) return <div className="h-screen flex items-center justify-center font-mono">INITIALIZING VIRTUAL ENVIRONMENT...</div>;
+
+      return (
+        <div className="flex h-screen overflow-hidden">
+          {/* Side Panel */}
+          <aside className="w-72 bg-slate-900 border-r border-slate-800 p-4 flex flex-col gap-4">
+            <div className="border-b border-slate-700 pb-4">
+              <h1 className="text-blue-500 font-black text-xl tracking-tighter italic">PINNACLE V2</h1>
+              <p className="text-[10px] text-slate-500 font-mono">STABLE BUILD: 04.22</p>
+            </div>
+
+            <div className="space-y-4">
+              <div className="bg-slate-800/50 p-3 rounded border border-slate-700">
+                <label className="text-[10px] uppercase text-slate-500 font-bold block mb-2">Active Profile</label>
+                <div className="text-sm font-mono text-blue-400 truncate">{profile.Username}</div>
+                <div className="text-xs text-slate-400">{profile.Country}</div>
+              </div>
+
+              <div className="bg-slate-800/50 p-3 rounded border border-slate-700">
+                <label className="text-[10px] uppercase text-slate-500 font-bold block mb-2">Data Metrics</label>
+                <div className="grid grid-cols-2 gap-2 font-mono text-[11px]">
+                  <div className="flex justify-between"><span>CK:</span><span className="text-green-400">{stats.CK || 0}</span></div>
+                  <div className="flex justify-between"><span>PW:</span><span className="text-green-400">{stats.PW || 0}</span></div>
+                  <div className="flex justify-between"><span>CC:</span><span className="text-green-400">{stats.CC || 0}</span></div>
+                  <div className="flex justify-between"><span>FB:</span><span className="text-green-400">{stats.FB || 0}</span></div>
+                </div>
+              </div>
+
+              <div className="bg-slate-800/50 p-3 rounded border border-slate-700">
+                <label className="text-[10px] uppercase text-slate-500 font-bold block mb-2">Extensions</label>
+                <div className="flex flex-wrap gap-1">
+                  {profile.Extensions?.split(',').map(e => (
+                    <span key={e} className="text-[9px] bg-blue-900/40 text-blue-300 px-1.5 py-0.5 rounded border border-blue-800/50">{e}</span>
+                  ))}
+                </div>              </div>
+            </div>
+
+            <div className="mt-auto pt-4 border-t border-slate-800">
+              <div className="flex items-center justify-between text-[10px]">
+                <span className="text-slate-500">COOKIES LOADED:</span>
+                <span className="text-blue-400 font-bold">{cookies.length}</span>
+              </div>
+            </div>
+          </aside>
+
+          {/* Browser Main */}
+          <main className="flex-grow flex flex-col">
+            <header className="bg-slate-900 p-2 border-b border-slate-800 flex gap-3 items-center">              <div className="flex items-center bg-black/40 border border-slate-700 rounded-full px-4 py-1.5 flex-grow">
+                <i className="fas fa-shield-halved text-green-500 mr-3 text-xs"></i>
+                <input 
+                  className="bg-transparent w-full outline-none text-xs font-mono text-slate-300"
+                  value={url}
+                  onChange={(e) => setUrl(e.target.value)}
+                />
+              </div>
+              <button className="bg-blue-600 hover:bg-blue-500 px-6 py-1.5 rounded-full text-xs font-bold transition-all">
+                REFRESH SESSION
+              </button>
+            </header>
+
+            <div className="flex-grow bg-white">
+              <iframe src={url} className="w-full h-full border-none" />
+            </div>
+
+            <footer className="bg-slate-900 p-2 border-t border-slate-800 flex justify-between items-center px-4">
+              <div className="flex gap-6 text-[10px] font-mono">
+                <span className="flex items-center gap-2">
+                  <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                  ANTIVIRUS: {profile.Antivirus}
+                </span>
+                <span className="text-slate-500 italic">APP: {profile.Applications}</span>
+              </div>
+              <div className="text-[10px] text-blue-500 font-bold uppercase tracking-widest">
+                Fingerprint Spoofing Active
+              </div>
+            </footer>
+          </main>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<Browser />);
+  </script>
+</body>
+</html>
